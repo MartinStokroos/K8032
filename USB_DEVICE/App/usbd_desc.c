@@ -62,6 +62,8 @@
   * @{
   */
 
+// Comment for k8032
+/*
 #define USBD_VID     1155
 #define USBD_LANGID_STRING     1033
 #define USBD_MANUFACTURER_STRING     "STMicroelectronics"
@@ -69,8 +71,17 @@
 #define USBD_PRODUCT_STRING_FS     "STM32 Custom Human interface"
 #define USBD_CONFIGURATION_STRING_FS     "Custom HID Config"
 #define USBD_INTERFACE_STRING_FS     "Custom HID Interface"
+*/
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
+
+#define USBD_VID     0x10CF
+#define USBD_LANGID_STRING     1033
+#define USBD_MANUFACTURER_STRING     "Velleman Components, Inc."
+#define USBD_PID_FS     0x5500
+#define USBD_PRODUCT_STRING_FS     "8055 Experiment Interface Board (address=0)"
+#define USBD_CONFIGURATION_STRING_FS     "Custom HID Config"
+#define USBD_INTERFACE_STRING_FS     "Custom HID Interface"
 
 /* USER CODE END PRIVATE_DEFINES */
 

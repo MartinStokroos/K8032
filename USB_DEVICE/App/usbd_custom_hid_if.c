@@ -22,7 +22,7 @@
 #include "usbd_custom_hid_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include <stdbool.h>
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +31,8 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+extern bool rxDataUsb;
+extern uint8_t rxBufferUSB[];
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -91,7 +92,20 @@
 __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_FS[USBD_CUSTOM_HID_REPORT_DESC_SIZE] __ALIGN_END =
 {
   /* USER CODE BEGIN 0 */
-  0x00,
+  0x06, 0x00,
+  0xFF, 0x09,
+  0x01, 0xA1,
+  0x01, 0x19,
+  0x01, 0x29,
+  0x08, 0x15,
+  0x00, 0x26,
+  0xFF, 0x00,
+  0x75, 0x08,
+  0x95, 0x08,
+  0x81, 0x02,
+  0x19, 0x01,
+  0x29, 0x08,
+  0x91, 0x02,
   /* USER CODE END 0 */
   0xC0    /*     END_COLLECTION	             */
 };
@@ -124,7 +138,8 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 static int8_t CUSTOM_HID_Init_FS(void);
 static int8_t CUSTOM_HID_DeInit_FS(void);
-static int8_t CUSTOM_HID_OutEvent_FS(uint8_t event_idx, uint8_t state);
+//static int8_t CUSTOM_HID_OutEvent_FS(uint8_t event_idx, uint8_t state);
+static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state); //k8032
 
 /**
   * @}
@@ -173,9 +188,16 @@ static int8_t CUSTOM_HID_DeInit_FS(void)
   * @param  state: Event state
   * @retval USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CUSTOM_HID_OutEvent_FS(uint8_t event_idx, uint8_t state)
+//static int8_t CUSTOM_HID_OutEvent_FS(uint8_t event_idx, uint8_t state)
+static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state) // changed for k8032
 {
   /* USER CODE BEGIN 6 */
+  //UNUSED(event_idx);
+  //UNUSED(state);
+  /* This is Out from the host point of view. This is the callback when receiving data. Copy state to buffer. */
+  memcpy(rxBufferUSB, state, CUSTOM_HID_EPOUT_SIZE);
+  //HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD4_Pin); // indicate we are receiving data from the host.
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }
