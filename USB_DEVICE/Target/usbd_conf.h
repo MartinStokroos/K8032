@@ -76,7 +76,7 @@
 /*---------- -----------*/
 #define USBD_CUSTOM_HID_REPORT_DESC_SIZE     29 //k8032
 /*---------- -----------*/
-#define CUSTOM_HID_FS_BINTERVAL     0x14 //for 20ms update rate k8032
+#define CUSTOM_HID_FS_BINTERVAL     0x0A //for 10ms update rate k8032
 
 /****************************************/
 /* #define for FS and HS identification */
