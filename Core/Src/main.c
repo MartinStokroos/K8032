@@ -35,6 +35,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 extern USBD_HandleTypeDef hUsbDeviceFS;
+void printByte(unsigned char);
 
 /* USER CODE END PD */
 
@@ -54,8 +55,15 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+
+// USB
 uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		//command input buffer from host
+uint8_t rxBuffer[CUSTOM_HID_EPIN_SIZE] = {1, 2, 3, 4, 5, 6, 7, 8};		//output buffer for data to host
 bool rxDataUsb = false;
+
+//serial debug interface
+//int serInput;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,6 +76,14 @@ static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
+
+#ifdef __GNUC__
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#define GETCHAR_PROTOTYPE int __io_getchar(void)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#define GETCHAR_PROTOTYPE int fgetc(FILE *f)
+#endif
 
 /* USER CODE END PFP */
 
@@ -83,6 +99,9 @@ static void MX_TIM2_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
+  setvbuf(stdin, NULL, _IONBF, 0); //To properly let work scanf()
+  int n;
 
   /* USER CODE END 1 */
 
@@ -112,7 +131,22 @@ int main(void)
   MX_ADC2_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  // Initialize peripherals
+  if (HAL_UART_Init(&huart3) != HAL_OK) // Initialize uart3
+  {
+	  Error_Handler();
+  }
 
+  // GPIO's
+  HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, true);
+  HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, false);
+  HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, false);
+  HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, false);
+  HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, false);
+  HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, false);
+  HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, false);
+  HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, false);
+  HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, false);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -122,9 +156,28 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	if(rxDataUsb){
+	if(rxDataUsb)
+	{
+		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, false);// LED green on when reading HID data.
 
+		// Print HID package
+		printf("\n\rHID package:\n\r");
+		for(n=1; n <= CUSTOM_HID_EPOUT_SIZE; n++)
+		{
+			printf("%u ", rxBufferUSB[n-1]);
+			if( (n % 8) == 0 )
+			{
+				printf("\n\r");
+			}
+		}
+
+		rxDataUsb = false;
+		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, true);// LED green off
 	}
+
+  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)rxBuffer, CUSTOM_HID_EPIN_SIZE);
+  HAL_Delay(500);
+
   }
   /* USER CODE END 3 */
 }
@@ -521,6 +574,39 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+PUTCHAR_PROTOTYPE
+{
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+
+GETCHAR_PROTOTYPE
+{
+  uint8_t ch = 0;
+
+  /* Clear the Overrun flag just before receiving the first character */
+  __HAL_UART_CLEAR_OREFLAG(&huart3);
+
+  /* Wait for reception of a character on the USART RX line and echo this
+   * character on console */
+  HAL_UART_Receive(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+
+
+
+void printByte(unsigned char inByte){
+	int i;
+
+	printf("0b");
+	for (i=0; i<8; i++){
+		putc((inByte & 0x80) ? '1' : '0', stdout);
+		inByte <<= 1;
+	}
+	printf("\r\n");
+}
+
 /* USER CODE END 4 */
 
 /**
@@ -534,6 +620,8 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin);
+	  HAL_Delay(500);
   }
   /* USER CODE END Error_Handler_Debug */
 }

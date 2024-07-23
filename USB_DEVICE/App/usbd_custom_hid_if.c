@@ -197,7 +197,7 @@ static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state) // changed for k8032
   /* This is Out from the host point of view. This is the callback when receiving data. Copy state to buffer. */
   memcpy(rxBufferUSB, state, CUSTOM_HID_EPOUT_SIZE);
   //HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD4_Pin); // indicate we are receiving data from the host.
-
+  rxDataUsb = true;
   return (USBD_OK);
   /* USER CODE END 6 */
 }
