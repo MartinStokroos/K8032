@@ -58,7 +58,7 @@ UART_HandleTypeDef huart3;
 
 // USB
 uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		//command input buffer from host
-uint8_t rxBuffer[CUSTOM_HID_EPIN_SIZE] = {0x10, 0x01, 0x7F, 0x7F, 0x05, 0x00, 0x0A, 0x00};		//output buffer for data to host
+uint8_t txBuffer[CUSTOM_HID_EPIN_SIZE] = {0x10, 0x01, 0x7F, 0x7F, 0x05, 0x00, 0x0A, 0x00};		//output buffer for data to host
 bool rxDataUsb = false;
 
 //serial debug interface
@@ -175,7 +175,7 @@ int main(void)
 		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, true);// LED green off
 	}
 
-  while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)rxBuffer, CUSTOM_HID_EPIN_SIZE))
+  while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
 	  {
 	  HAL_Delay(5);
 	  }
