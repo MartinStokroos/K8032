@@ -46,10 +46,8 @@ void printByte(unsigned char);
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
 
 TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart3;
@@ -57,8 +55,9 @@ UART_HandleTypeDef huart3;
 /* USER CODE BEGIN PV */
 
 // USB
-uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		//command input buffer from host
-uint8_t txBuffer[CUSTOM_HID_EPIN_SIZE] = {0x10, 0x01, 0x7F, 0x7F, 0x05, 0x00, 0x0A, 0x00};		//output buffer for data to host
+uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		// buffer for data from host
+uint8_t txBuffer[CUSTOM_HID_EPIN_SIZE] = {0x10, 0x01, 0x7F, 0x7F, 0x05, 0x00, 0x0A, 0x00};	// buffer for data to host
+// bytes: DIN, PID+1, AN1, AN2, CNT1, CNT2
 bool rxDataUsb = false;
 
 //serial debug interface
@@ -73,8 +72,6 @@ static void MX_TIM1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_ADC2_Init(void);
-static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 #ifdef __GNUC__
@@ -98,10 +95,11 @@ static void MX_TIM2_Init(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
 
-  setvbuf(stdin, NULL, _IONBF, 0); //To properly let work scanf()
+  /* USER CODE BEGIN 1 */
+  setvbuf(stdin, NULL, _IONBF, 0); // To properly let work scanf()
   int n;
+  unsigned char digOut, anOut1, anOut2;
 
   /* USER CODE END 1 */
 
@@ -128,8 +126,6 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM4_Init();
   MX_ADC1_Init();
-  MX_ADC2_Init();
-  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // Initialize peripherals
   if (HAL_UART_Init(&huart3) != HAL_OK) // Initialize uart3
@@ -138,15 +134,15 @@ int main(void)
   }
 
   // GPIO's
-  HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, true);
-  HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, false);
-  HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, false);
-  HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, false);
-  HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, false);
-  HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, false);
-  HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, false);
-  HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, false);
-  HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, false);
+  HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, GPIO_PIN_RESET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -158,7 +154,39 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	if(rxDataUsb)
 	{
-		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, false);// LED green on when reading HID data.
+		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, false); // LED green on when reading HID data.
+
+		if (rxBufferUSB[CMD] == 0) {
+			// reset
+		}
+		else if (rxBufferUSB[CMD] == 1) {
+			// Set debounce, counter 1
+		}
+		else if (rxBufferUSB[CMD] == 2) {
+			// Set debounce, counter 2
+		}
+		else if (rxBufferUSB[CMD] == 3) {
+			// Reset counter 1
+		}
+		else if (rxBufferUSB[CMD] == 4) {
+			// Reset counter 2
+		}
+		else if (rxBufferUSB[CMD] == 5) {
+			// Set analog and  digital
+			digOut = rxBufferUSB[DOUT];
+			HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, (digOut & 1));
+			HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, (digOut & 2));
+			HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, (digOut & 4));
+			HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, (digOut & 8));
+			HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, (digOut & 16));
+			HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, (digOut & 32));
+			HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, (digOut & 64));
+			HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, (digOut & 128));
+
+			anOut1 = rxBufferUSB[DAC1];
+			anOut2 = rxBufferUSB[DAC2];
+
+		}
 
 		// Print HID package
 		printf("\n\rHID package:\n\r");
@@ -172,7 +200,7 @@ int main(void)
 		}
 
 		rxDataUsb = false;
-		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, true);// LED green off
+		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, GPIO_PIN_SET); // LED green off
 	}
 
   while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
@@ -279,53 +307,6 @@ static void MX_ADC1_Init(void)
 }
 
 /**
-  * @brief ADC2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC2_Init(void)
-{
-
-  /* USER CODE BEGIN ADC2_Init 0 */
-
-  /* USER CODE END ADC2_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC2_Init 1 */
-
-  /* USER CODE END ADC2_Init 1 */
-
-  /** Common config
-  */
-  hadc2.Instance = ADC2;
-  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc2.Init.ContinuousConvMode = DISABLE;
-  hadc2.Init.DiscontinuousConvMode = DISABLE;
-  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc2.Init.NbrOfConversion = 1;
-  if (HAL_ADC_Init(&hadc2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_9;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC2_Init 2 */
-
-  /* USER CODE END ADC2_Init 2 */
-
-}
-
-/**
   * @brief TIM1 Initialization Function
   * @param None
   * @retval None
@@ -379,54 +360,6 @@ static void MX_TIM1_Init(void)
 }
 
 /**
-  * @brief TIM2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM2_Init(void)
-{
-
-  /* USER CODE BEGIN TIM2_Init 0 */
-
-  /* USER CODE END TIM2_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_IC_InitTypeDef sConfigIC = {0};
-
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM2_Init 2 */
-
-  /* USER CODE END TIM2_Init 2 */
-
-}
-
-/**
   * @brief TIM4 Initialization Function
   * @param None
   * @retval None
@@ -448,7 +381,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 3599;
+  htim4.Init.Period = 1473;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -563,12 +496,18 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DI_0_Pin DI_1_Pin DI_2_Pin DI_3_Pin
-                           DI_4_Pin */
+                           DI_4_Pin DI_6_Pin DI_7_Pin */
   GPIO_InitStruct.Pin = DI_0_Pin|DI_1_Pin|DI_2_Pin|DI_3_Pin
-                          |DI_4_Pin;
+                          |DI_4_Pin|DI_6_Pin|DI_7_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DI_5_Pin */
+  GPIO_InitStruct.Pin = DI_5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DI_5_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

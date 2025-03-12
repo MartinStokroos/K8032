@@ -77,10 +77,6 @@ void Error_Handler(void);
 #define DO_6_GPIO_Port GPIOA
 #define DO_7_Pin GPIO_PIN_7
 #define DO_7_GPIO_Port GPIOA
-#define AI_0_Pin GPIO_PIN_0
-#define AI_0_GPIO_Port GPIOB
-#define AI_1_Pin GPIO_PIN_1
-#define AI_1_GPIO_Port GPIOB
 #define DI_0_Pin GPIO_PIN_2
 #define DI_0_GPIO_Port GPIOB
 #define DI_1_Pin GPIO_PIN_12
@@ -91,9 +87,33 @@ void Error_Handler(void);
 #define DI_3_GPIO_Port GPIOB
 #define DI_4_Pin GPIO_PIN_15
 #define DI_4_GPIO_Port GPIOB
+#define DI_5_Pin GPIO_PIN_10
+#define DI_5_GPIO_Port GPIOA
+#define DI_6_Pin GPIO_PIN_8
+#define DI_6_GPIO_Port GPIOB
+#define DI_7_Pin GPIO_PIN_9
+#define DI_7_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+enum epoutBytes {
+	CMD,
+	DOUT,
+	DAC1,
+	DAC2,
+	RESET1,
+	RESET2,
+	DEB1,
+	DEB2
+};
 
+enum epinBytes {
+	DIN,
+	BOARD_ID,
+	AN1,
+	AN2,
+	CNT1,
+	CNT2
+};
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

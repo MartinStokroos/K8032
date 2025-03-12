@@ -1,11 +1,29 @@
-# K8032
-Mimics the Velleman K8055 with the STM32F103 Blue Pill board.
+# K8032  
+An STM32F103 Blue Pill-based replica of the Velleman K8055 USB interface card.  
 
-## K8055
-The K8055 from Velleman Inc. is a well known USB-interface card for the PC and it already exists for more than 20 years. A DLL for 32-bits and 64-bits Windows is available from the Velleman website to connect the card with the GUI-demo application or API. 
+## K8055  
+The K8055 from Velleman Inc. is a well-known USB interface card for PCs and has been available for over 20 years. A DLL for both 32-bit and 64-bit Windows can be downloaded from the Velleman website, allowing the card to be used with the GUI demo application or API.  
 
-## Differences between the K8032 and the K8055
-The K8032 connects with high device bus speed, instead of low. Check R10 from the Blue Pill if it is 1.5kOhms. If R10 is 10KOhms, place a 1.8kOhms resistor in parallel between pin 1 (3.3) and pin 12 (A12). 
+## Features of the K8032  
+- The K8032 operates at high device bus speed instead of low. Verify that resistor R10 on the Blue Pill is 1.5kΩ. If R10 is 10kΩ, add a 1.8kΩ resistor in parallel between pin 1 (3.3V) and pin 12 (A12).  
+- The interrupt transfer interval can be as fast as 1 ms.  
+- The PWM frequency is: ..  
 
-## Pinout
+## Pinout  
 
+(To do: add device ID)  
+
+## Required Components  
+To function as a full replacement for the K8055, the STM32F103 Blue Pill requires additional circuitry, including:  
+
+- An 8-line digital output buffer/level converter.  
+- 5 lines of 5V-tolerant digital input buffers.  
+- Two low-pass filters for analog PWM outputs.  
+- Two analog input amplifier/buffers.  
+
+**Important Note:** The STM32F103 Blue Pill operates with 3.3V logic I/O and has a maximum analog input voltage of 3.3V.  
+
+## Acknowledgments
+Thanks to the work of Richard Hull for inverse engineering the K8055 data packet protocol.
+
+(https://github.com/rm-hull/k8055)[https://github.com/rm-hull/k8055]
