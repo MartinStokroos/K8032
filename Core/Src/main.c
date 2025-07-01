@@ -35,7 +35,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 extern USBD_HandleTypeDef hUsbDeviceFS;
-void printByte(unsigned char);
+int cardAddr=0; // card address
 
 /* USER CODE END PD */
 
@@ -82,6 +82,9 @@ static void MX_ADC1_Init(void);
 #define GETCHAR_PROTOTYPE int fgetc(FILE *f)
 #endif
 
+void printByte(unsigned char);
+void writeDigOut(unsigned char *);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -99,7 +102,10 @@ int main(void)
   /* USER CODE BEGIN 1 */
   setvbuf(stdin, NULL, _IONBF, 0); // To properly let work scanf()
   int n;
-  unsigned char digOut, anOut1, anOut2;
+  unsigned char digOut;
+  unsigned int anOut1, anOut2;
+  long ledTimer;
+  bool ledToggle=false;
 
   /* USER CODE END 1 */
 
@@ -127,28 +133,33 @@ int main(void)
   MX_TIM4_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  // Initialize peripherals
-  if (HAL_UART_Init(&huart3) != HAL_OK) // Initialize uart3
+  // read the card address from the jumper settings.
+  if (HAL_GPIO_ReadPin(SK5_GPIO_Port, SK5_Pin))
+  {
+  	cardAddr = 0x01;
+  }
+  if (HAL_GPIO_ReadPin(SK6_GPIO_Port, SK6_Pin))
+  {
+  	cardAddr |= 0x02;
+  }
+  printf("\n\rcard address: %u\n\r", cardAddr);
+
+  // Initialize uart3
+  if (HAL_UART_Init(&huart3) != HAL_OK)
   {
 	  Error_Handler();
   }
 
-  // GPIO's
-  HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, GPIO_PIN_RESET);
-
-  // Timer 4 for generating PWM (org. f k8055 is 23.43kHz)
+  // Init timer 4 for generating PWM (org. f k8055 is 23.43kHz)
   // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
   // prescaler=div2 (setting=1 !), tim1clk=36MHz, f_pwm=36000/(1536+1)=23.4223kHz
   // resolution: log(ARR+1)/log(2)=log(1536+1)/log(2)=10.5859bit.
-  HAL_TIM_Base_Start_IT(&htim4); //Start the PWM generation.
+  HAL_TIM_Base_Start_IT(&htim4);
+  HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1); // Start the PWM generation.
+  HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_2);
+
+  // Start ADC1
+  HAL_ADC_Start(&hadc1);
 
   /* USER CODE END 2 */
 
@@ -161,7 +172,9 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	if(rxDataUsb)
 	{
-		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, false); // LED green on when reading HID data.
+		HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin); // Toggle LED green on incoming data.
+		ledTimer = uwTick;
+		ledToggle = true;
 
 		if (rxBufferUSB[CMD] == 0) {
 			// reset
@@ -181,17 +194,11 @@ int main(void)
 		else if (rxBufferUSB[CMD] == 5) {
 			// Set analog and digital
 			digOut = rxBufferUSB[DOUT];
-			HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, (digOut & 1));
-			HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, (digOut & 2));
-			HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, (digOut & 4));
-			HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, (digOut & 8));
-			HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, (digOut & 16));
-			HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, (digOut & 32));
-			HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, (digOut & 64));
-			HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, (digOut & 128));
-
-			anOut1 = rxBufferUSB[DAC1];
-			anOut2 = rxBufferUSB[DAC2];
+			writeDigOut(&digOut); // write digital
+			anOut1 = rxBufferUSB[DAC1] << 3;
+			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, anOut1); // write PWM1
+			anOut2 = rxBufferUSB[DAC2] << 3;
+			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, anOut2); // write PWM2
 		}
 
 		// Print HID package
@@ -206,14 +213,18 @@ int main(void)
 		}
 
 		rxDataUsb = false;
-		HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, GPIO_PIN_SET); // LED green off
 	}
 
-  while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
-	  {
-	  HAL_Delay(5);
-	  }
+    while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
+    {
+    	HAL_Delay(5);
+    }
 
+    if (ledToggle && (uwTick > ledTimer+100))
+    {
+    	HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin); // Toggle back green LED.
+    	ledToggle = false;
+    }
   }
   /* USER CODE END 3 */
 }
@@ -542,16 +553,30 @@ GETCHAR_PROTOTYPE
 }
 
 
+void printByte(unsigned char inByte)
+{
+   int i;
 
-void printByte(unsigned char inByte){
-	int i;
+   printf("0b");
+   for (i=0; i<8; i++){
+      putc((inByte & 0x80) ? '1' : '0', stdout);
+      inByte <<= 1;
+   }
+   printf("\r\n");
+}
 
-	printf("0b");
-	for (i=0; i<8; i++){
-		putc((inByte & 0x80) ? '1' : '0', stdout);
-		inByte <<= 1;
-	}
-	printf("\r\n");
+
+void writeDigOut(unsigned char *byte)
+{
+  // to do: write at once
+  HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, (*byte & DO_0_Pin));
+  HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, (*byte & DO_1_Pin));
+  HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, (*byte & DO_2_Pin));
+  HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, (*byte & DO_3_Pin));
+  HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, (*byte & DO_4_Pin));
+  HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, (*byte & DO_5_Pin));
+  HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, (*byte & DO_6_Pin));
+  HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, (*byte & DO_7_Pin));
 }
 
 /* USER CODE END 4 */
@@ -568,7 +593,7 @@ void Error_Handler(void)
   while (1)
   {
 	  HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin);
-	  HAL_Delay(500);
+	  HAL_Delay(200);
   }
   /* USER CODE END Error_Handler_Debug */
 }

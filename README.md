@@ -13,12 +13,11 @@ The K8032 communicates trough a
 - The K8032 has a serial debug interface for inspecting the incoming HID data packages.
 
 To do:
-- address selection
-- PWM out
+- dynamically change USB device name and PID depending on address jumper settings.
 - analog in
 - counter
 - debounce function
-- hardware board
+- hardware board design
 
 ## Pinout  
 ![STM32F103-pinout](stm32f103_pinout.png)

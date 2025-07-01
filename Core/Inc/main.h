@@ -34,7 +34,7 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-/* Exported types ------------------------------------------------------------*/
+/* Exported types ----------------HAL_IncTick()--------------------------------------------*/
 /* USER CODE BEGIN ET */
 
 /* USER CODE END ET */
