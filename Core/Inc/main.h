@@ -89,10 +89,10 @@ void Error_Handler(void);
 #define DI_4_GPIO_Port GPIOB
 #define DI_5_Pin GPIO_PIN_10
 #define DI_5_GPIO_Port GPIOA
-#define DI_6_Pin GPIO_PIN_8
-#define DI_6_GPIO_Port GPIOB
-#define DI_7_Pin GPIO_PIN_9
-#define DI_7_GPIO_Port GPIOB
+#define SK5_Pin GPIO_PIN_8
+#define SK5_GPIO_Port GPIOB
+#define SK6_Pin GPIO_PIN_9
+#define SK6_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 enum epoutBytes { // incoming package bytes

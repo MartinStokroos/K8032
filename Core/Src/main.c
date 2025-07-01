@@ -143,6 +143,13 @@ int main(void)
   HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, GPIO_PIN_RESET);
+
+  // Timer 4 for generating PWM (org. f k8055 is 23.43kHz)
+  // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
+  // prescaler=div2 (setting=1 !), tim1clk=36MHz, f_pwm=36000/(1536+1)=23.4223kHz
+  // resolution: log(ARR+1)/log(2)=log(1536+1)/log(2)=10.5859bit.
+  HAL_TIM_Base_Start_IT(&htim4); //Start the PWM generation.
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -280,7 +287,7 @@ static void MX_ADC1_Init(void)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -380,7 +387,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 1473;
+  htim4.Init.Period = 1536;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -495,11 +502,11 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DI_0_Pin DI_1_Pin DI_2_Pin DI_3_Pin
-                           DI_4_Pin DI_6_Pin DI_7_Pin */
+                           DI_4_Pin SK5_Pin SK6_Pin */
   GPIO_InitStruct.Pin = DI_0_Pin|DI_1_Pin|DI_2_Pin|DI_3_Pin
-                          |DI_4_Pin|DI_6_Pin|DI_7_Pin;
+                          |DI_4_Pin|SK5_Pin|SK6_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : DI_5_Pin */
