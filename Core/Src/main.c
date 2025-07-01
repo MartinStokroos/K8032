@@ -172,7 +172,7 @@ int main(void)
 			// Reset counter 2
 		}
 		else if (rxBufferUSB[CMD] == 5) {
-			// Set analog and  digital
+			// Set analog and digital
 			digOut = rxBufferUSB[DOUT];
 			HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, (digOut & 1));
 			HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, (digOut & 2));
@@ -185,7 +185,6 @@ int main(void)
 
 			anOut1 = rxBufferUSB[DAC1];
 			anOut2 = rxBufferUSB[DAC2];
-
 		}
 
 		// Print HID package

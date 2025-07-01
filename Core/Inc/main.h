@@ -95,7 +95,7 @@ void Error_Handler(void);
 #define DI_7_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-enum epoutBytes {
+enum epoutBytes { // incoming package bytes
 	CMD,
 	DOUT,
 	DAC1,
@@ -106,7 +106,7 @@ enum epoutBytes {
 	DEB2
 };
 
-enum epinBytes {
+enum epinBytes { // outgoing package bytes
 	DIN,
 	BOARD_ID,
 	AN1,
