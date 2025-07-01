@@ -30,6 +30,16 @@ This firmware has been created with:
 - STMCubeIDE version 1.17.0 and
 - STM32CubeF1 Firmware Package V1.8.6
 
+After (re)generating code with CubeMX, disgard the modified files below with git restore <file> or repair manually for custom HID.
+
+```
+Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Inc/usbd_customhid.h
+Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Src/usbd_customhid.c
+USB_DEVICE/App/usbd_custom_hid_if.c
+USB_DEVICE/App/usbd_desc.c
+USB_DEVICE/Target/usbd_conf.h
+```
+
 ## Required hardware  
 To function as a full replacement for the K8055 board, the STM32F103 Blue Pill requires additional circuitry, including:  
 
