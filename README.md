@@ -13,7 +13,6 @@ The K8055 communicates as a custom HID device with two end points and uses 8-byt
 - The K8032 has a serial debug interface for inspecting the incoming HID data packages.
 
 To do:
-- analog in
 - counter inputs
 - debounce function
 - dynamically change USB device name and PID depending on address jumper settings at startup.

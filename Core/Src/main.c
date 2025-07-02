@@ -103,7 +103,9 @@ int main(void)
   setvbuf(stdin, NULL, _IONBF, 0); // To properly let work scanf()
   int n;
   unsigned char digOut;
-  unsigned int anOut1, anOut2;
+  uint16_t anOut1, anOut2;
+  uint16_t adc_val_ch8 = 0;
+  uint16_t adc_val_ch9 = 0;
   long ledTimer;
   bool ledToggle=false;
 
@@ -158,11 +160,6 @@ int main(void)
   HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1); // Start the PWM generation.
   HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_2);
 
-  // Start ADC1
-  if (HAL_ADC_Start(&hadc1) != HAL_OK)
-  {
-	  Error_Handler();
-  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -219,8 +216,22 @@ int main(void)
 
 	txBuffer[DIN] = 0x00; // digital inputs
 	txBuffer[BOARD_ID] = cardAddr+1; // current card address
-	txBuffer[AN1] = 0x7F; // analog channel 1
-	txBuffer[AN2] = 0x7F; // analog channel 2
+
+	// Discontinuous scanning mode
+	HAL_ADC_Start(&hadc1); // Start ADC in polling mode
+	if (HAL_ADC_PollForConversion(&hadc1, 2) == HAL_OK)
+	{
+		adc_val_ch8 = HAL_ADC_GetValue(&hadc1);  // First result: Channel 8
+	}
+	txBuffer[AN1] = (adc_val_ch8 >> 4) & 0xFF; // analog channel 1
+
+	HAL_ADC_Start(&hadc1);
+	if (HAL_ADC_PollForConversion(&hadc1, 2) == HAL_OK)
+	{
+	    adc_val_ch9 = HAL_ADC_GetValue(&hadc1);  // Second result: Channel 9
+	}
+	//HAL_ADC_Stop(&hadc1);
+	txBuffer[AN2] = (adc_val_ch9 >> 4) & 0xFF; // analog channel 2
 
 
     while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
@@ -306,8 +317,9 @@ static void MX_ADC1_Init(void)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = ENABLE;
+  hadc1.Init.NbrOfDiscConversion = 1;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 2;
@@ -321,6 +333,15 @@ static void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_9;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
