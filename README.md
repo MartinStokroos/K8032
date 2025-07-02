@@ -3,7 +3,7 @@ A STM32F103 Blue Pill-based clone of the Velleman K8055 USB interface card.
 
 ## K8055  
 The K8055 from Velleman Inc. is a well-known USB interface card for PCs and has been available for over 20 years. A DLL for both 32-bit and 64-bit Windows can be downloaded from the Velleman website, allowing the card to be used with the GUI demo application or API.  
-The K8032 communicates as custom HID device with two end points and uses 8-byte data packages.
+The K8055 communicates as a custom HID device with two end points and uses 8-byte sized data packages.
 
 ## Features of the K8032  
 - The K8032 connects as a high speed USB device instead of low speed. Verify your Blue Pill, that resistor R10 is valued 1.5kΩ. If R10 is 10kΩ, connect a 1.8kΩ resistor between pin 1 (3.3V) and pin 12 (A12).  
@@ -16,13 +16,14 @@ To do:
 - analog in
 - counter inputs
 - debounce function
-- dynamically change USB device name and PID depending on address jumper settings.
+- dynamically change USB device name and PID depending on address jumper settings at startup.
 
-## Pinout  
+## MCU Pinout  
 ![STM32F103-pinout](stm32f103_pinout.png)
 
-## Firmware
+## Blue Pill Pinout
 
+## Firmware
 This firmware was created with:
 
 - STMCubeIDE version 1.17.0 and
@@ -41,8 +42,8 @@ USB_DEVICE/Target/usbd_conf.h
 ## Required hardware  
 To function as a full replacement for the K8055 board, the STM32F103 Blue Pill requires additional circuitry, including:  
 
-- An 8-line digital output buffer/level converter (3.3V to 5V).
-- 5 lines of 5V-tolerant digital input buffers.
+- An 8-way digital output buffer/level converter (3.3V to 5V).
+- Five lines of 5V-tolerant digital input buffers.
 - Two low-pass filters for analog PWM outputs. 
 - Two analog input amplifier/buffers.
 
@@ -51,4 +52,4 @@ To function as a full replacement for the K8055 board, the STM32F103 Blue Pill r
 A PCB design for K8032 is planned...
 
 ## Acknowledgments
-Thanks to (Richard Hull)[https://github.com/rm-hull/k8055] for doing the reverse engineering of the K8055 HID packet protocol.
+Thanks to [Richard Hull](https://github.com/rm-hull/k8055) for doing the reverse engineering of the K8055 HID packet protocol.

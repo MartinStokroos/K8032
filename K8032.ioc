@@ -1,10 +1,14 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.Channel-1\#ChannelRegularConversion=ADC_CHANNEL_8
+ADC1.Channel-2\#ChannelRegularConversion=ADC_CHANNEL_8
 ADC1.ContinuousConvMode=ENABLE
-ADC1.IPParameters=Rank-1\#ChannelRegularConversion,Channel-1\#ChannelRegularConversion,SamplingTime-1\#ChannelRegularConversion,NbrOfConversionFlag,master,ContinuousConvMode
+ADC1.IPParameters=Rank-1\#ChannelRegularConversion,Channel-1\#ChannelRegularConversion,SamplingTime-1\#ChannelRegularConversion,NbrOfConversionFlag,master,ContinuousConvMode,Rank-2\#ChannelRegularConversion,Channel-2\#ChannelRegularConversion,SamplingTime-2\#ChannelRegularConversion,NbrOfConversion
+ADC1.NbrOfConversion=2
 ADC1.NbrOfConversionFlag=1
 ADC1.Rank-1\#ChannelRegularConversion=1
+ADC1.Rank-2\#ChannelRegularConversion=2
 ADC1.SamplingTime-1\#ChannelRegularConversion=ADC_SAMPLETIME_1CYCLE_5
+ADC1.SamplingTime-2\#ChannelRegularConversion=ADC_SAMPLETIME_1CYCLE_5
 ADC1.master=1
 CAD.formats=
 CAD.pinconfig=
@@ -221,7 +225,7 @@ ProjectManager.DeviceId=STM32F103C8Tx
 ProjectManager.FirmwarePackage=STM32Cube FW_F1 V1.8.6
 ProjectManager.FreePins=false
 ProjectManager.HalAssertFull=false
-ProjectManager.HeapSize=0x200
+ProjectManager.HeapSize=0x400
 ProjectManager.KeepUserCode=true
 ProjectManager.LastFirmware=true
 ProjectManager.LibraryCopy=1

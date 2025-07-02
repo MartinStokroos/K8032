@@ -159,8 +159,10 @@ int main(void)
   HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_2);
 
   // Start ADC1
-  HAL_ADC_Start(&hadc1);
-
+  if (HAL_ADC_Start(&hadc1) != HAL_OK)
+  {
+	  Error_Handler();
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -303,12 +305,12 @@ static void MX_ADC1_Init(void)
   /** Common config
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.NbrOfConversion = 2;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
