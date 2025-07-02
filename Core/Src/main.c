@@ -152,8 +152,8 @@ int main(void)
 
   // Init timer 4 for generating PWM (org. f k8055 is 23.43kHz)
   // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
-  // prescaler=div2 (setting=1 !), tim1clk=36MHz, f_pwm=36000/(1536+1)=23.4223kHz
-  // resolution: log(ARR+1)/log(2)=log(1536+1)/log(2)=10.5859bit.
+  // prescaler=div2 (setting=1 !), tim1clk=36MHz, f_pwm=36000/(1023+1)=35.1563kHz
+  // resolution: log(ARR+1)/log(2)=log(1023+1)/log(2)=10bit.
   HAL_TIM_Base_Start_IT(&htim4);
   HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1); // Start the PWM generation.
   HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_2);
@@ -195,9 +195,9 @@ int main(void)
 			// Set analog and digital
 			digOut = rxBufferUSB[DOUT];
 			writeDigOut(&digOut); // write digital
-			anOut1 = rxBufferUSB[DAC1] << 3;
+			anOut1 = rxBufferUSB[DAC1] << 2; // scale up to 10 bits.
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, anOut1); // write PWM1
-			anOut2 = rxBufferUSB[DAC2] << 3;
+			anOut2 = rxBufferUSB[DAC2] << 2;
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, anOut2); // write PWM2
 		}
 
@@ -398,7 +398,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 1536;
+  htim4.Init.Period = 1023;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
