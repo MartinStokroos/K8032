@@ -201,7 +201,7 @@ int main(void)
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, anOut2); // write PWM2
 		}
 
-		// Print HID package
+		// Print HID package to serial
 		printf("\n\rHID package:\n\r");
 		for(n=1; n <= CUSTOM_HID_EPOUT_SIZE; n++)
 		{
@@ -214,6 +214,12 @@ int main(void)
 
 		rxDataUsb = false;
 	}
+
+	txBuffer[DIN] = 0x00; // digital inputs
+	txBuffer[BOARD_ID] = cardAddr+1; // current card address
+	txBuffer[AN1] = 0x7F; // analog channel 1
+	txBuffer[AN2] = 0x7F; // analog channel 2
+
 
     while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
     {
@@ -568,15 +574,9 @@ void printByte(unsigned char inByte)
 
 void writeDigOut(unsigned char *byte)
 {
-  // to do: write at once
-  HAL_GPIO_WritePin(DO_0_GPIO_Port, DO_0_Pin, (*byte & DO_0_Pin));
-  HAL_GPIO_WritePin(DO_1_GPIO_Port, DO_1_Pin, (*byte & DO_1_Pin));
-  HAL_GPIO_WritePin(DO_2_GPIO_Port, DO_2_Pin, (*byte & DO_2_Pin));
-  HAL_GPIO_WritePin(DO_3_GPIO_Port, DO_3_Pin, (*byte & DO_3_Pin));
-  HAL_GPIO_WritePin(DO_4_GPIO_Port, DO_4_Pin, (*byte & DO_4_Pin));
-  HAL_GPIO_WritePin(DO_5_GPIO_Port, DO_5_Pin, (*byte & DO_5_Pin));
-  HAL_GPIO_WritePin(DO_6_GPIO_Port, DO_6_Pin, (*byte & DO_6_Pin));
-  HAL_GPIO_WritePin(DO_7_GPIO_Port, DO_7_Pin, (*byte & DO_7_Pin));
+  // write at once. Only works for a row of 8 pins on the same port.
+  GPIOA->BSRR = *byte					// Set bits
+	      	    | (~(*byte) << 16);		// Reset bits
 }
 
 /* USER CODE END 4 */
