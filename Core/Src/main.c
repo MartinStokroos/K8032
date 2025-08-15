@@ -102,7 +102,8 @@ int main(void)
   /* USER CODE BEGIN 1 */
   setvbuf(stdin, NULL, _IONBF, 0); // To properly let work scanf()
   int n;
-  unsigned char digOut;
+  uint8_t digitalOut;
+  uint8_t digitalIn;
   uint16_t anOut1, anOut2;
   uint16_t adc_val_ch8 = 0;
   uint16_t adc_val_ch9 = 0;
@@ -201,8 +202,8 @@ int main(void)
 		}
 		else if (rxBufferUSB[CMD] == 5) {
 			// set analog and digital
-			digOut = rxBufferUSB[DOUT];
-			writeDigital(&digOut); // write digital
+			digitalOut = rxBufferUSB[DOUT];
+			writeDigital(&digitalOut); // write digital
 			anOut1 = rxBufferUSB[DAC1] << 2; // scale up to 10 bits.
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, anOut1); // write PWM1
 			anOut2 = rxBufferUSB[DAC2] << 2;
@@ -224,11 +225,13 @@ int main(void)
 	}
 
 	// digital inputs
-	txBuffer[DIN] = HAL_GPIO_ReadPin(I1_GPIO_Port, I1_Pin) << 5 |
-			HAL_GPIO_ReadPin(I2_GPIO_Port, I2_Pin) << 6 |
-			HAL_GPIO_ReadPin(I3_GPIO_Port, I3_Pin) |
-			HAL_GPIO_ReadPin(I4_GPIO_Port, I4_Pin) << 4 |
-			HAL_GPIO_ReadPin(I5_GPIO_Port, I5_Pin) << 8;
+	digitalIn = 0;
+	if (HAL_GPIO_ReadPin(I1_GPIO_Port, I1_Pin) == 1) digitalIn |= 0x10;
+	if (HAL_GPIO_ReadPin(I2_GPIO_Port, I2_Pin) == 1) digitalIn |= 0x20;
+	if (HAL_GPIO_ReadPin(I3_GPIO_Port, I3_Pin) == 1) digitalIn |= 0x01;
+	if (HAL_GPIO_ReadPin(I4_GPIO_Port, I4_Pin) == 1) digitalIn |= 0x40;
+	if (HAL_GPIO_ReadPin(I5_GPIO_Port, I5_Pin) == 1) digitalIn |= 0x80;
+	txBuffer[DIN] = digitalIn;
 
 	// Discontinuous scanning mode
 	HAL_ADC_Start(&hadc1); // Start ADC in polling mode
