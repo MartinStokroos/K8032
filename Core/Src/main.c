@@ -135,22 +135,23 @@ int main(void)
   MX_TIM4_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  // read the card address from the jumper settings.
-  if (HAL_GPIO_ReadPin(SK5_GPIO_Port, SK5_Pin))
-  {
-  	cardAddr = 0x01;
-  }
-  if (HAL_GPIO_ReadPin(SK6_GPIO_Port, SK6_Pin))
-  {
-  	cardAddr |= 0x02;
-  }
-  printf("\n\rcard address: %u\n\r", cardAddr);
-
   // Initialize uart3
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
 	  Error_Handler();
   }
+
+  // read the card address from the jumper settings.
+  if (HAL_GPIO_ReadPin(SK5_GPIO_Port, SK5_Pin) == 1)
+  {
+  	cardAddr = 0x01;
+  }
+  if (HAL_GPIO_ReadPin(SK6_GPIO_Port, SK6_Pin) == 1)
+  {
+  	cardAddr |= 0x02;
+  }
+  txBuffer[BOARD_ID] = cardAddr+1; // fill the buffer with the current card address
+  printf("\n\rcard address: %u\n\r", cardAddr);
 
   // Init timer 4 for generating PWM (org. f k8055 is 23.43kHz)
   // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
@@ -179,19 +180,19 @@ int main(void)
 			// reset
 		}
 		else if (rxBufferUSB[CMD] == 1) {
-			// Set debounce, counter 1
+			// set debounce, counter 1
 		}
 		else if (rxBufferUSB[CMD] == 2) {
-			// Set debounce, counter 2
+			// set debounce, counter 2
 		}
 		else if (rxBufferUSB[CMD] == 3) {
-			// Reset counter 1
+			// seset counter 1
 		}
 		else if (rxBufferUSB[CMD] == 4) {
-			// Reset counter 2
+			// seset counter 2
 		}
 		else if (rxBufferUSB[CMD] == 5) {
-			// Set analog and digital
+			// set analog and digital
 			digOut = rxBufferUSB[DOUT];
 			writeDigOut(&digOut); // write digital
 			anOut1 = rxBufferUSB[DAC1] << 2; // scale up to 10 bits.
@@ -215,7 +216,6 @@ int main(void)
 	}
 
 	txBuffer[DIN] = 0x00; // digital inputs
-	txBuffer[BOARD_ID] = cardAddr+1; // current card address
 
 	// Discontinuous scanning mode
 	HAL_ADC_Start(&hadc1); // Start ADC in polling mode
@@ -597,7 +597,7 @@ void printByte(unsigned char inByte)
 
 void writeDigOut(unsigned char *byte)
 {
-  // write at once. Only works for a row of 8 pins on the same port.
+  // write at once. Only works for pins from the same port.
   GPIOA->BSRR = *byte					// Set bits
 	      	    | (~(*byte) << 16);		// Reset bits
 }
