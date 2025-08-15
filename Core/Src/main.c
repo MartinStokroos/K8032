@@ -35,7 +35,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 extern USBD_HandleTypeDef hUsbDeviceFS;
-int cardAddr=0; // card address
+uint8_t cardAddr=0; // card address
 
 /* USER CODE END PD */
 
@@ -83,7 +83,7 @@ static void MX_ADC1_Init(void);
 #endif
 
 void printByte(unsigned char);
-void writeDigOut(unsigned char *);
+void writeDigital(unsigned char *);
 
 /* USER CODE END PFP */
 
@@ -150,12 +150,20 @@ int main(void)
   {
   	cardAddr |= 0x02;
   }
-  txBuffer[BOARD_ID] = cardAddr+1; // fill the buffer with the current card address
+  txBuffer[BOARD_ID] = 0x01; //cardAddr+1; // fill the buffer with the current card address
   printf("\n\rcard address: %u\n\r", cardAddr);
+
+  // Init timer 1 for input capture
+  // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
+  // prescaler=div1 (setting=0), tim1clk=72MHz, ftim1=72000/(7199)=10.0014kHz
+  // 2 ms debounce → 20 ticks
+  // 10 ms debounce → 100 ticks
+  // 1000 ms debounce → 10 000 ticks
+  HAL_TIM_Base_Start(&htim1);
 
   // Init timer 4 for generating PWM (org. f k8055 is 23.43kHz)
   // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
-  // prescaler=div2 (setting=1 !), tim1clk=36MHz, f_pwm=36000/(1023+1)=35.1563kHz
+  // prescaler=div2 (setting=1), tim1clk=36MHz, f_pwm=36000/(1023+1)=35.1563kHz
   // resolution: log(ARR+1)/log(2)=log(1023+1)/log(2)=10bit.
   HAL_TIM_Base_Start_IT(&htim4);
   HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1); // Start the PWM generation.
@@ -186,15 +194,15 @@ int main(void)
 			// set debounce, counter 2
 		}
 		else if (rxBufferUSB[CMD] == 3) {
-			// seset counter 1
+			// reset counter 1
 		}
 		else if (rxBufferUSB[CMD] == 4) {
-			// seset counter 2
+			// reset counter 2
 		}
 		else if (rxBufferUSB[CMD] == 5) {
 			// set analog and digital
 			digOut = rxBufferUSB[DOUT];
-			writeDigOut(&digOut); // write digital
+			writeDigital(&digOut); // write digital
 			anOut1 = rxBufferUSB[DAC1] << 2; // scale up to 10 bits.
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, anOut1); // write PWM1
 			anOut2 = rxBufferUSB[DAC2] << 2;
@@ -215,7 +223,12 @@ int main(void)
 		rxDataUsb = false;
 	}
 
-	txBuffer[DIN] = 0x00; // digital inputs
+	// digital inputs
+	txBuffer[DIN] = HAL_GPIO_ReadPin(I1_GPIO_Port, I1_Pin) << 5 |
+			HAL_GPIO_ReadPin(I2_GPIO_Port, I2_Pin) << 6 |
+			HAL_GPIO_ReadPin(I3_GPIO_Port, I3_Pin) |
+			HAL_GPIO_ReadPin(I4_GPIO_Port, I4_Pin) << 4 |
+			HAL_GPIO_ReadPin(I5_GPIO_Port, I5_Pin) << 8;
 
 	// Discontinuous scanning mode
 	HAL_ADC_Start(&hadc1); // Start ADC in polling mode
@@ -373,7 +386,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 7199;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -522,8 +535,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, DO_0_Pin|DO_1_Pin|DO_2_Pin|DO_3_Pin
-                          |DO_4_Pin|DO_5_Pin|DO_6_Pin|DO_7_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, D1_Pin|D2_Pin|D3_Pin|D4_Pin
+                          |D5_Pin|D6_Pin|D7_Pin|D8_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : LD_GREEN_Pin */
   GPIO_InitStruct.Pin = LD_GREEN_Pin;
@@ -532,28 +545,32 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD_GREEN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DO_0_Pin DO_1_Pin DO_2_Pin DO_3_Pin
-                           DO_4_Pin DO_5_Pin DO_6_Pin DO_7_Pin */
-  GPIO_InitStruct.Pin = DO_0_Pin|DO_1_Pin|DO_2_Pin|DO_3_Pin
-                          |DO_4_Pin|DO_5_Pin|DO_6_Pin|DO_7_Pin;
+  /*Configure GPIO pins : D1_Pin D2_Pin D3_Pin D4_Pin
+                           D5_Pin D6_Pin D7_Pin D8_Pin */
+  GPIO_InitStruct.Pin = D1_Pin|D2_Pin|D3_Pin|D4_Pin
+                          |D5_Pin|D6_Pin|D7_Pin|D8_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DI_0_Pin DI_1_Pin DI_2_Pin DI_3_Pin
-                           DI_4_Pin SK5_Pin SK6_Pin */
-  GPIO_InitStruct.Pin = DI_0_Pin|DI_1_Pin|DI_2_Pin|DI_3_Pin
-                          |DI_4_Pin|SK5_Pin|SK6_Pin;
+  /*Configure GPIO pins : I1_Pin I2_Pin I3_Pin I4_Pin */
+  GPIO_InitStruct.Pin = I1_Pin|I2_Pin|I3_Pin|I4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : I5_Pin */
+  GPIO_InitStruct.Pin = I5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(I5_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SK6_Pin SK5_Pin */
+  GPIO_InitStruct.Pin = SK6_Pin|SK5_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : DI_5_Pin */
-  GPIO_InitStruct.Pin = DI_5_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(DI_5_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -595,7 +612,7 @@ void printByte(unsigned char inByte)
 }
 
 
-void writeDigOut(unsigned char *byte)
+void writeDigital(unsigned char *byte)
 {
   // write at once. Only works for pins from the same port.
   GPIOA->BSRR = *byte					// Set bits

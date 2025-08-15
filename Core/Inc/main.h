@@ -61,38 +61,48 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LD_GREEN_Pin GPIO_PIN_13
 #define LD_GREEN_GPIO_Port GPIOC
-#define DO_0_Pin GPIO_PIN_0
-#define DO_0_GPIO_Port GPIOA
-#define DO_1_Pin GPIO_PIN_1
-#define DO_1_GPIO_Port GPIOA
-#define DO_2_Pin GPIO_PIN_2
-#define DO_2_GPIO_Port GPIOA
-#define DO_3_Pin GPIO_PIN_3
-#define DO_3_GPIO_Port GPIOA
-#define DO_4_Pin GPIO_PIN_4
-#define DO_4_GPIO_Port GPIOA
-#define DO_5_Pin GPIO_PIN_5
-#define DO_5_GPIO_Port GPIOA
-#define DO_6_Pin GPIO_PIN_6
-#define DO_6_GPIO_Port GPIOA
-#define DO_7_Pin GPIO_PIN_7
-#define DO_7_GPIO_Port GPIOA
-#define DI_0_Pin GPIO_PIN_2
-#define DI_0_GPIO_Port GPIOB
-#define DI_1_Pin GPIO_PIN_12
-#define DI_1_GPIO_Port GPIOB
-#define DI_2_Pin GPIO_PIN_13
-#define DI_2_GPIO_Port GPIOB
-#define DI_3_Pin GPIO_PIN_14
-#define DI_3_GPIO_Port GPIOB
-#define DI_4_Pin GPIO_PIN_15
-#define DI_4_GPIO_Port GPIOB
-#define DI_5_Pin GPIO_PIN_10
-#define DI_5_GPIO_Port GPIOA
-#define SK5_Pin GPIO_PIN_8
-#define SK5_GPIO_Port GPIOB
-#define SK6_Pin GPIO_PIN_9
+#define D1_Pin GPIO_PIN_0
+#define D1_GPIO_Port GPIOA
+#define D2_Pin GPIO_PIN_1
+#define D2_GPIO_Port GPIOA
+#define D3_Pin GPIO_PIN_2
+#define D3_GPIO_Port GPIOA
+#define D4_Pin GPIO_PIN_3
+#define D4_GPIO_Port GPIOA
+#define D5_Pin GPIO_PIN_4
+#define D5_GPIO_Port GPIOA
+#define D6_Pin GPIO_PIN_5
+#define D6_GPIO_Port GPIOA
+#define D7_Pin GPIO_PIN_6
+#define D7_GPIO_Port GPIOA
+#define D8_Pin GPIO_PIN_7
+#define D8_GPIO_Port GPIOA
+#define A1_Pin GPIO_PIN_0
+#define A1_GPIO_Port GPIOB
+#define A2_Pin GPIO_PIN_1
+#define A2_GPIO_Port GPIOB
+#define I1_Pin GPIO_PIN_12
+#define I1_GPIO_Port GPIOB
+#define I2_Pin GPIO_PIN_13
+#define I2_GPIO_Port GPIOB
+#define I3_Pin GPIO_PIN_14
+#define I3_GPIO_Port GPIOB
+#define I4_Pin GPIO_PIN_15
+#define I4_GPIO_Port GPIOB
+#define CNT1_Pin GPIO_PIN_8
+#define CNT1_GPIO_Port GPIOA
+#define CNT2_Pin GPIO_PIN_9
+#define CNT2_GPIO_Port GPIOA
+#define I5_Pin GPIO_PIN_10
+#define I5_GPIO_Port GPIOA
+#define PWM1_Pin GPIO_PIN_6
+#define PWM1_GPIO_Port GPIOB
+#define PWM2_Pin GPIO_PIN_7
+#define PWM2_GPIO_Port GPIOB
+#define SK6_Pin GPIO_PIN_8
 #define SK6_GPIO_Port GPIOB
+#define SK5_Pin GPIO_PIN_9
+#define SK5_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 enum epoutBytes { // incoming package bytes
@@ -116,6 +126,7 @@ enum epinBytes { // outgoing package bytes
 	CNT2_MSB,
 	CNT2_LSB
 };
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

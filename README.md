@@ -15,6 +15,7 @@ The K8055 communicates as a custom HID device with two end points and uses 8-byt
 - The Green (sometimes red or blue) LED connected to PC13 on the Blue Pill shows the USB connection status and USB activity
 - The K8032 has a serial debug interface for inspecting the incoming HID data packages.
 - The counter inputs no longer share the DI1 and DI2 inputs.
+- Using 5V tolerant inputs for digital inputs.
 
 To do:
 - counter inputs
