@@ -34,8 +34,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define USB_LED_TIMEOUT_MS 100
+
 extern USBD_HandleTypeDef hUsbDeviceFS;
-uint8_t cardAddr=0; // card address
 
 /* USER CODE END PD */
 
@@ -53,6 +54,7 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+uint8_t cardAddr=0; // card address
 
 // USB
 uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		// buffer for data from host
@@ -181,9 +183,13 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	if(rxDataUsb)
 	{
-		HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin); // Toggle LED green on incoming data.
-		ledTimer = uwTick;
-		ledToggle = true;
+		// show activity on USB LED
+		if (!HAL_GPIO_ReadPin(LD_GREEN_GPIO_Port, LD_GREEN_Pin)) // If ON..
+		{
+			HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin);
+			ledTimer = uwTick;
+			ledToggle = true;
+		}
 
 		if (rxBufferUSB[CMD] == 0) {
 			// reset
@@ -249,13 +255,13 @@ int main(void)
 	//HAL_ADC_Stop(&hadc1);
 	txBuffer[AN2] = (adc_val_ch9 >> 4) & 0xFF; // analog channel 2
 
-
+	// Send HID package
     while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
     {
     	HAL_Delay(5);
     }
 
-    if (ledToggle && (uwTick > ledTimer+100))
+    if (ledToggle && (uwTick > ledTimer + USB_LED_TIMEOUT_MS))
     {
     	HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin); // Toggle back green LED.
     	ledToggle = false;
@@ -535,7 +541,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, D1_Pin|D2_Pin|D3_Pin|D4_Pin
