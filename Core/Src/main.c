@@ -415,7 +415,7 @@ static void MX_TIM1_Init(void)
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -657,11 +657,12 @@ void writeDigital(unsigned char *byte)
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-	static uint16_t last_capture_ch1 = 0;
-	static uint16_t last_capture_ch2 = 0;
-    uint16_t capture;
-	uint16_t delta;
+	static uint32_t last_capture_ch1 = 0;
+	static uint32_t last_capture_ch2 = 0;
+    uint32_t capture;
+	uint32_t delta;
 
+	HAL_GPIO_TogglePin(D1_GPIO_Port, D1_Pin);
     if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
     {
         capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
@@ -669,7 +670,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
                          (capture - last_capture_ch1) :
                          (htim->Init.Period - last_capture_ch1 + capture + 1);
 
-        printf("%u\n\r", delta);
+        printf("%lu\n\r", delta);
         if (delta >= 10000) // 1s
         {
             // Valid edge detected
@@ -679,8 +680,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         }
         // else: ignore bounce
     }
-
-    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+    else if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
     {
         capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
         delta = (capture >= last_capture_ch2) ?
