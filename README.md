@@ -58,7 +58,7 @@ additional circuitry, including:
 - Two low-pass filters for analog PWM outputs. 
 - Two analog input amplifier/buffers.
 
-**Important Note:** The STM32F103 Blue Pill operates with 3.3V logic I/O and accepts analog input voltages of 3.3V max.
+**Important Note:** The STM32F103 Blue Pill operates on 3.3V and accepts analog input voltages of 3.3V max.
 
 A PCB design for K8032 is planned...
 

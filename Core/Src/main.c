@@ -58,9 +58,14 @@ uint8_t cardAddr=0; // card address
 
 // USB
 uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		// buffer for data from host
-uint8_t txBuffer[CUSTOM_HID_EPIN_SIZE] = {0x10, 0x01, 0x7F, 0x7F, 0x05, 0x00, 0x0A, 0x00};	// buffer for data to host
 // bytes: DIN, PID+1, AN1, AN2, CNT1, CNT2
+uint8_t txBuffer[CUSTOM_HID_EPIN_SIZE];	// buffer for data to host
+
 bool rxDataUsb = false;
+
+// input capture
+volatile uint16_t counter1 = 5;
+volatile uint16_t counter2 = 10;
 
 //serial debug interface
 //int serInput;
@@ -158,11 +163,12 @@ int main(void)
 
   // Init timer 1 for input capture
   // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
-  // prescaler=div1 (setting=0), tim1clk=72MHz, ftim1=72000/(7199)=10.0014kHz
+  // prescaler=div1 (setting=0), PSC=7199, CPER=65535, ftim1=72Mhz/(7199+1)=10kHz → 0.1 ms per tick
   // 2 ms debounce → 20 ticks
   // 10 ms debounce → 100 ticks
-  // 1000 ms debounce → 10 000 ticks
-  HAL_TIM_Base_Start(&htim1);
+  // 1000 ms debounce → 10000 ticks
+  HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
 
   // Init timer 4 for generating PWM (org. f k8055 is 23.43kHz)
   // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
@@ -202,9 +208,11 @@ int main(void)
 		}
 		else if (rxBufferUSB[CMD] == 3) {
 			// reset counter 1
+			counter1 = 0;
 		}
 		else if (rxBufferUSB[CMD] == 4) {
 			// reset counter 2
+			counter2 = 0;
 		}
 		else if (rxBufferUSB[CMD] == 5) {
 			// set analog and digital
@@ -226,7 +234,6 @@ int main(void)
 				printf("\n\r");
 			}
 		}
-
 		rxDataUsb = false;
 	}
 
@@ -239,7 +246,16 @@ int main(void)
 	if (HAL_GPIO_ReadPin(I5_GPIO_Port, I5_Pin) == 1) digitalIn |= 0x80;
 	txBuffer[DIN] = digitalIn;
 
-	// Discontinuous scanning mode
+	// counter 1
+	txBuffer[CNT1_MSB] = (counter1 >> 8) & 0xFF;
+	txBuffer[CNT1_LSB] = counter1 & 0xFF;
+
+	// counter 2
+	//counter2 = __HAL_TIM_GET_COUNTER(&htim1);
+	txBuffer[CNT2_MSB] = (counter2 >> 8) & 0xFF;
+	txBuffer[CNT2_LSB] = counter2 & 0xFF;
+
+	// read ADC - discontinuous scanning mode
 	HAL_ADC_Start(&hadc1); // Start ADC in polling mode
 	if (HAL_ADC_PollForConversion(&hadc1, 2) == HAL_OK)
 	{
@@ -386,6 +402,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_IC_InitTypeDef sConfigIC = {0};
 
@@ -393,12 +410,21 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 7199;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 7199;
+  htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_IC_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -586,12 +612,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
 PUTCHAR_PROTOTYPE
 {
   HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
 }
+
 
 GETCHAR_PROTOTYPE
 {
@@ -626,6 +652,50 @@ void writeDigital(unsigned char *byte)
   // write at once. Only works for pins from the same port.
   GPIOA->BSRR = *byte					// Set bits
 	      	    | (~(*byte) << 16);		// Reset bits
+}
+
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	static uint16_t last_capture_ch1 = 0;
+	static uint16_t last_capture_ch2 = 0;
+    uint16_t capture;
+	uint16_t delta;
+
+    if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+    {
+        capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+        delta = (capture >= last_capture_ch1) ?
+                         (capture - last_capture_ch1) :
+                         (htim->Init.Period - last_capture_ch1 + capture + 1);
+
+        printf("%u\n\r", delta);
+        if (delta >= 10000) // 1s
+        {
+            // Valid edge detected
+            last_capture_ch1 = capture;
+            // Handle event
+            counter1++;
+        }
+        // else: ignore bounce
+    }
+
+    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+    {
+        capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+        delta = (capture >= last_capture_ch2) ?
+                         (capture - last_capture_ch2) :
+                         (htim->Init.Period - last_capture_ch2 + capture + 1);
+
+        if (delta >= 1000) // 100ms
+        {
+            // Valid edge detected
+            last_capture_ch2 = capture;
+            // Handle event
+            counter2++;
+        }
+        // else: ignore bounce
+    }
 }
 
 /* USER CODE END 4 */

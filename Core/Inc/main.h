@@ -121,10 +121,10 @@ enum epinBytes { // outgoing package bytes
 	BOARD_ID,
 	AN1,
 	AN2,
-	CNT1_MSB,
 	CNT1_LSB,
-	CNT2_MSB,
-	CNT2_LSB
+	CNT1_MSB,
+	CNT2_LSB,
+	CNT2_MSB
 };
 
 /* USER CODE END Private defines */
