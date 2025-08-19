@@ -14,13 +14,11 @@ The K8055 communicates as a custom HID device with two end points and uses 8-byt
 - The PWM frequency is 35.15kHz (23.43kHz for the K8055)
 - The Green (sometimes red or blue) LED connected to PC13 on the Blue Pill shows the USB connection status and USB activity
 - The K8032 has a serial debug interface for inspecting the incoming HID data packages.
-- The counter inputs no longer share with the I1 and I2 inputs.
-- Using 5V tolerant inputs for digital inputs.
+- The counter inputs no longer share the (digital) I1 and I2 inputs.
+- Using 5V tolerant inputs for digital and counter inputs.
 
 To do:
-- counter inputs
-- debouncing on counter inputs
-- dynamically change USB device name and PID depending on address jumper settings at startup.
+- dynamically change USB PID depending on address jumper settings at startup.
 
 ## MCU Pinout  
 
@@ -37,7 +35,7 @@ This firmware has been created with:
 - STMCubeIDE version 1.17.0 and
 - STM32CubeF1 Firmware Package V1.8.6
 
-After regenerating code with CubeMX, discard the modified files below with `git restore` or repair manually for custom HID.
+After regenerating code with CubeMX, discard the replaced files below with `git restore` or repair manually for custom HID.
 
 ```
 Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Inc/usbd_customhid.h
@@ -50,12 +48,11 @@ USB_DEVICE/Target/usbd_conf.h
 
 ## Required hardware  
 
-To function as a full replacement for the K8055 board, the STM32F103 Blue Pill requires 
-additional circuitry, including:
+To function as a full replacement for the K8055 board, the STM32F103 Blue Pill requires additional circuitry, including:
 
 - An 8-way digital output buffer/level converter (3.3V to 5V).
 - Five lines of 5V-tolerant digital input buffers.
-- Two low-pass filters for analog PWM outputs. 
+- Two low-pass filters for analog PWM outputs.
 - Two analog input amplifier/buffers.
 
 **Important Note:** The STM32F103 Blue Pill operates on 3.3V and accepts analog input voltages of 3.3V max.

@@ -54,7 +54,7 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint8_t cardAddr=0; // card address
+uint8_t card_addr=0; // card address
 
 // USB
 uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		// buffer for data from host
@@ -146,23 +146,27 @@ int main(void)
   MX_TIM4_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+
+  // read the card address from the jumper settings.
+  if (HAL_GPIO_ReadPin(SK5_GPIO_Port, SK5_Pin) == 1)
+  {
+  	card_addr |= 0x01;
+  }
+  if (HAL_GPIO_ReadPin(SK6_GPIO_Port, SK6_Pin) == 1)
+  {
+  	card_addr |= 0x02;
+  }
+  txBuffer[BOARD_ID] = card_addr+1; // fill the buffer with the current card address
+
+  // Replace array entry before using USB device enumeration, but where?
+  //USBD_FS_DeviceDesc[USB_LEN_DEV_DESC] = card_addr;
+
   // Initialize uart3
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
 	  Error_Handler();
   }
-
-  // read the card address from the jumper settings.
-  if (HAL_GPIO_ReadPin(SK5_GPIO_Port, SK5_Pin) == 1)
-  {
-  	cardAddr |= 0x01;
-  }
-  if (HAL_GPIO_ReadPin(SK6_GPIO_Port, SK6_Pin) == 1)
-  {
-  	cardAddr |= 0x02;
-  }
-  txBuffer[BOARD_ID] = cardAddr+1; // fill the buffer with the current card address
-  printf("\n\rcard address: %u\n\r", cardAddr);
+  printf("* K8032 v1.0 *\n\rcard address: %u\n\r", card_addr);
 
   // Init timer 1 for input capture
   // With HSE=8.0MHz, PLLmul=9, AHBpresc=1, sysclk=72MHz
