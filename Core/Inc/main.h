@@ -127,6 +127,23 @@ enum epinBytes { // outgoing package bytes
 	CNT2_MSB
 };
 
+enum commands {
+	BOARD_RESET,
+	SET_DEBOUNCE1,
+	SET_DEBOUNCE2,
+	RESET_CNT1,
+	RESET_CNT2,
+	WRITE_DA,
+	HANDSHAKE
+};
+
+enum debouncing {
+	DEB_PER_0MS = 1,
+	DEB_PER_2MS = 3,
+	DEB_PER_10MS = 8,
+	DEB_PER_1000MS = 88
+};
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

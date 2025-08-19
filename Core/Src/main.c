@@ -64,8 +64,10 @@ uint8_t txBuffer[CUSTOM_HID_EPIN_SIZE];	// buffer for data to host
 bool rxDataUsb = false;
 
 // input capture
-volatile uint16_t counter1 = 5;
-volatile uint16_t counter2 = 10;
+volatile uint16_t counter1 = 0;
+volatile uint16_t counter2 = 0;
+uint16_t deb_per_cnt1 = 20; // default debouncing period
+uint16_t deb_per_cnt2 = 20;
 
 //serial debug interface
 //int serInput;
@@ -116,6 +118,7 @@ int main(void)
   uint16_t adc_val_ch9 = 0;
   long ledTimer;
   bool ledToggle=false;
+  bool printRxBuff=false;
 
   /* USER CODE END 1 */
 
@@ -152,13 +155,13 @@ int main(void)
   // read the card address from the jumper settings.
   if (HAL_GPIO_ReadPin(SK5_GPIO_Port, SK5_Pin) == 1)
   {
-  	cardAddr = 0x01;
+  	cardAddr |= 0x01;
   }
   if (HAL_GPIO_ReadPin(SK6_GPIO_Port, SK6_Pin) == 1)
   {
   	cardAddr |= 0x02;
   }
-  txBuffer[BOARD_ID] = 0x01; //cardAddr+1; // fill the buffer with the current card address
+  txBuffer[BOARD_ID] = cardAddr+1; // fill the buffer with the current card address
   printf("\n\rcard address: %u\n\r", cardAddr);
 
   // Init timer 1 for input capture
@@ -197,24 +200,40 @@ int main(void)
 			ledToggle = true;
 		}
 
-		if (rxBufferUSB[CMD] == 0) {
-			// reset
+		if (rxBufferUSB[CMD] == BOARD_RESET) {
+			// reset ?
 		}
-		else if (rxBufferUSB[CMD] == 1) {
-			// set debounce, counter 1
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE1) & (rxBufferUSB[DEB1] == DEB_PER_0MS)) {
+			deb_per_cnt1 = 0; // set debouncing period counter 1
 		}
-		else if (rxBufferUSB[CMD] == 2) {
-			// set debounce, counter 2
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE1) & (rxBufferUSB[DEB1] == DEB_PER_2MS)) {
+			deb_per_cnt1 = 20; // set debouncing period counter 1
 		}
-		else if (rxBufferUSB[CMD] == 3) {
-			// reset counter 1
-			counter1 = 0;
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE1) & (rxBufferUSB[DEB1] == DEB_PER_10MS)) {
+			deb_per_cnt1 = 100; // set debouncing period counter 1
 		}
-		else if (rxBufferUSB[CMD] == 4) {
-			// reset counter 2
-			counter2 = 0;
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE1) & (rxBufferUSB[DEB1] == DEB_PER_1000MS)) {
+			deb_per_cnt1 = 10000; // set debouncing period counter 1
 		}
-		else if (rxBufferUSB[CMD] == 5) {
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE2) & (rxBufferUSB[DEB2] == DEB_PER_0MS)) {
+			deb_per_cnt2 = 0; // set debouncing period counter 2
+		}
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE2) & (rxBufferUSB[DEB2] == DEB_PER_2MS)) {
+			deb_per_cnt2 = 20; // set debouncing period counter 2
+		}
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE2) & (rxBufferUSB[DEB2] == DEB_PER_10MS))	{
+			deb_per_cnt2 = 100; // set debouncing period counter 2
+		}
+		else if ((rxBufferUSB[CMD] == SET_DEBOUNCE2) & (rxBufferUSB[DEB2] == DEB_PER_1000MS)) {
+			deb_per_cnt2 = 10000; // set debouncing period counter 2
+		}
+		else if (rxBufferUSB[CMD] == RESET_CNT1) {
+			counter1 = 0; // reset counter 1
+		}
+		else if (rxBufferUSB[CMD] == RESET_CNT2) {
+			counter2 = 0; // reset counter 2
+		}
+		else if (rxBufferUSB[CMD] == WRITE_DA) {
 			// set analog and digital
 			digitalOut = rxBufferUSB[DOUT];
 			writeDigital(&digitalOut); // write digital
@@ -223,17 +242,11 @@ int main(void)
 			anOut2 = rxBufferUSB[DAC2] << 2;
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, anOut2); // write PWM2
 		}
-
-		// Print HID package to serial
-		printf("\n\rHID package:\n\r");
-		for(n=1; n <= CUSTOM_HID_EPOUT_SIZE; n++)
-		{
-			printf("%u ", rxBufferUSB[n-1]);
-			if( (n % 8) == 0 )
-			{
-				printf("\n\r");
-			}
+		else if (rxBufferUSB[CMD] == HANDSHAKE) {
+			// send reply with board ID?
 		}
+
+		printRxBuff = true;
 		rxDataUsb = false;
 	}
 
@@ -251,7 +264,6 @@ int main(void)
 	txBuffer[CNT1_LSB] = counter1 & 0xFF;
 
 	// counter 2
-	//counter2 = __HAL_TIM_GET_COUNTER(&htim1);
 	txBuffer[CNT2_MSB] = (counter2 >> 8) & 0xFF;
 	txBuffer[CNT2_LSB] = counter2 & 0xFF;
 
@@ -268,10 +280,10 @@ int main(void)
 	{
 	    adc_val_ch9 = HAL_ADC_GetValue(&hadc1);  // Second result: Channel 9
 	}
-	//HAL_ADC_Stop(&hadc1);
+	// HAL_ADC_Stop(&hadc1);
 	txBuffer[AN2] = (adc_val_ch9 >> 4) & 0xFF; // analog channel 2
 
-	// Send HID package
+	// Send HID package to host
     while(USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t*)txBuffer, CUSTOM_HID_EPIN_SIZE))
     {
     	HAL_Delay(5);
@@ -281,6 +293,21 @@ int main(void)
     {
     	HAL_GPIO_TogglePin(LD_GREEN_GPIO_Port, LD_GREEN_Pin); // Toggle back green LED.
     	ledToggle = false;
+    }
+
+    if(printRxBuff)
+    {
+		// Print received HID package to serial
+		printf("\n\rHID package:\n\r");
+		for(n=1; n <= CUSTOM_HID_EPOUT_SIZE; n++)
+		{
+			printf("%u ", rxBufferUSB[n-1]);
+			if( (n % 8) == 0 )
+			{
+				printf("\n\r");
+			}
+		}
+		printRxBuff = false;
     }
   }
   /* USER CODE END 3 */
@@ -657,12 +684,12 @@ void writeDigital(unsigned char *byte)
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-	static uint32_t last_capture_ch1 = 0;
-	static uint32_t last_capture_ch2 = 0;
+	static uint32_t last_capture_ch1;
+	static uint32_t last_capture_ch2;
     uint32_t capture;
 	uint32_t delta;
 
-	HAL_GPIO_TogglePin(D1_GPIO_Port, D1_Pin);
+	// HAL_GPIO_TogglePin(D1_GPIO_Port, D1_Pin); // debugging
     if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
     {
         capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
@@ -670,8 +697,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
                          (capture - last_capture_ch1) :
                          (htim->Init.Period - last_capture_ch1 + capture + 1);
 
-        printf("%lu\n\r", delta);
-        if (delta >= 10000) // 1s
+        // printf("%lu\n\r", delta); // debugging
+        if (delta >= deb_per_cnt1)
         {
             // Valid edge detected
             last_capture_ch1 = capture;
@@ -687,7 +714,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
                          (capture - last_capture_ch2) :
                          (htim->Init.Period - last_capture_ch2 + capture + 1);
 
-        if (delta >= 1000) // 100ms
+        if (delta >= deb_per_cnt2)
         {
             // Valid edge detected
             last_capture_ch2 = capture;
