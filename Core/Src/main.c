@@ -57,8 +57,8 @@ UART_HandleTypeDef huart3;
 uint8_t card_addr=0; // card address
 
 // USB
-uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];		// buffer for data from host
-// bytes: DIN, PID+1, AN1, AN2, CNT1, CNT2
+uint8_t rxBufferUSB[CUSTOM_HID_EPOUT_SIZE];	// buffer for data from host
+// bytes: |DIN|PID+1|AN1|AN2|CNT1|CNT2|
 uint8_t txBuffer[CUSTOM_HID_EPIN_SIZE];	// buffer for data to host
 
 bool rxDataUsb = false;
@@ -142,7 +142,7 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   MX_USART3_UART_Init();
-  MX_USB_DEVICE_Init();
+  //MX_USB_DEVICE_Init();
   MX_TIM4_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
@@ -158,8 +158,9 @@ int main(void)
   }
   txBuffer[BOARD_ID] = card_addr+1; // fill the buffer with the current card address
 
-  // Replace array entry before using USB device enumeration, but where?
-  //USBD_FS_DeviceDesc[USB_LEN_DEV_DESC] = card_addr;
+  // Replace array entry of PID LSB before USB device enumeration in usb_device.c
+  // USBD_FS_DeviceDesc[10] = card_addr;
+  MX_USB_DEVICE_Init();
 
   // Initialize uart3
   if (HAL_UART_Init(&huart3) != HAL_OK)

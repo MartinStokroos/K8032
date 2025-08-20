@@ -392,8 +392,14 @@ static void IntToUnicode(uint32_t value, uint8_t * pbuf, uint8_t len)
   }
 }
 /**
-  * @}
+  * @brief: setter for USB PID
+  * @param pid: 16 bit PID identifier.
   */
+void USBD_SetPID(uint16_t pid)
+{
+    USBD_FS_DeviceDesc[10] = LOBYTE(pid);
+    USBD_FS_DeviceDesc[11] = HIBYTE(pid);
+}
 
 /**
   * @}

@@ -121,6 +121,8 @@ extern USBD_DescriptorsTypeDef FS_Desc;
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
 
+void USBD_SetPID(uint16_t pid);
+
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**

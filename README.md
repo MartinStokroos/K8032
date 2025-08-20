@@ -5,28 +5,29 @@
 ## K8055  
 
 The K8055 from Velleman Inc. is a well-known USB interface card for PCs and has been available for over 20 years. A DLL for both 32-bit and 64-bit Windows can be downloaded from the Velleman website, allowing the card to be used with the GUI demo application or API.
-The K8055 communicates as a custom HID device with two end points and uses 8-byte sized data packages.
+The K8055 communicates as a custom HID class device with two end points and uses 8-byte sized data packages.
 
 ## Features of the K8032  
 
-- The K8032 connects as a high speed USB device instead of low speed. (Verify your Blue Pill. Resistor R10 shoulde be valued 1.5kΩ. If R10 is 10kΩ, connect a 1.8kΩ resistor between pin 1 (3.3V) and pin 12 (A12).
-- K8055 LD8 (here DO_7 out) will not flash after connecting to USB
+- The K8032 connects as a high speed USB device instead of low speed. (Verify your Blue Pill. Resistor R10 should be valued 1.5kΩ. If R10 is 10kΩ, connect a 1.8kΩ resistor between pin 1 (3.3V) and pin 12 (A12).
+- K8055 LD8 (here D7 out) will not flash after connecting to USB
 - The PWM frequency is 35.15kHz (23.43kHz for the K8055)
-- The Green (sometimes red or blue) LED connected to PC13 on the Blue Pill shows the USB connection status and USB activity
+- The green (sometimes red or blue) LED connected to PC13 on the Blue Pill shows the USB connection status and USB activity
 - The K8032 has a serial debug interface for inspecting the incoming HID data packages.
 - The counter inputs no longer share the (digital) I1 and I2 inputs.
-- Using 5V tolerant inputs for digital and counter inputs.
+- Using 5V tolerant inputs for all digital and counter inputs.
 
 To do:
-- dynamically change USB PID depending on address jumper settings at startup.
+- input filtering enabled on counter inputs
+- moving average filter on ADC inputs.
 
 ## MCU Pinout  
 
-![STM32F103-pinout](stm32f103_pinout.png)
+![STM32F103 pinout](stm32f103_pinout.png)
 
 ## Blue Pill Pinout
 
-
+![Blue Pill pinout](stm32f103c8t6_pinout.png)
 
 ## Firmware
 
@@ -41,6 +42,8 @@ After regenerating code with CubeMX, discard the replaced files below with `git 
 Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Inc/usbd_customhid.h
 Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Src/usbd_customhid.c
 USB_DEVICE/App/usbd_custom_hid_if.c
+USB_DEVICE/App/usb_device.c
+USB_DEVICE/App/usbd_desc.h
 USB_DEVICE/App/usbd_desc.c
 USB_DEVICE/Target/usbd_conf.h
 
@@ -61,7 +64,7 @@ A PCB design for K8032 is planned...
 
 ## Flashing the STM32F103
 
-
+Find the build firmware file in firmware/
 
 ## Acknowledgments
 

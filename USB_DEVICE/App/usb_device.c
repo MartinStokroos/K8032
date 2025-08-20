@@ -32,7 +32,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+extern uint8_t card_addr;
 /* USER CODE END PV */
 
 /* USER CODE BEGIN PFP */
@@ -80,6 +80,10 @@ void MX_USB_DEVICE_Init(void)
   {
     Error_Handler();
   }
+
+  // dynamically change the device PID before USB enumeration
+  USBD_SetPID(0x5500 + card_addr);
+
   if (USBD_Start(&hUsbDeviceFS) != USBD_OK)
   {
     Error_Handler();
