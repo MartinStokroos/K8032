@@ -10,7 +10,7 @@ The K8055 communicates as a custom HID class device with two end points and uses
 ## Features of the K8032  
 
 - The K8032 connects as a high speed USB device instead of low speed. (Verify your Blue Pill. Resistor R10 should be valued 1.5kΩ. If R10 is 10kΩ, connect a 1.8kΩ resistor between pin 1 (3.3V) and pin 12 (A12).
-- K8055 LD8 (here D7 out) will not flash after connecting to USB
+- D7 digital output (K8055 - LD8) will not flash after connecting to USB
 - The PWM frequency is 35.15kHz (23.43kHz for the K8055)
 - The green (sometimes red or blue) LED connected to PC13 on the Blue Pill shows the USB connection status and USB activity
 - The K8032 has a serial debug interface for inspecting the incoming HID data packages.
@@ -21,11 +21,11 @@ To do:
 - input filtering enabled on counter inputs
 - moving average filter on ADC inputs.
 
-## MCU Pinout  
+## MCU pinout  
 
 ![STM32F103 pinout](stm32f103_pinout.png)
 
-## Blue Pill Pinout
+## Blue Pill pinout
 
 ![Blue Pill pinout](stm32f103c8t6_pinout.png)
 
@@ -64,7 +64,11 @@ A PCB design for K8032 is planned...
 
 ## Flashing the STM32F103
 
-Find the build firmware file in firmware/
+Find the build firmware file in `firmware/`
+
+## Connecting and operating the K8032
+
+Don't forget to pull-down pins SK5, SK6 to select board address `0`.
 
 ## Acknowledgments
 
